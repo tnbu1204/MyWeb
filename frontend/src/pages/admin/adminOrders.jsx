@@ -21,6 +21,48 @@ export default function AdminOrders() {
         setDetailLoading(false);
     };
 
+    const handleUpdate = async (id, newQuantity) => {
+        if (newQuantity < 1) return;
+
+        try {
+            const ok = window.confirm("Bạn có chắc muốn thay đổi số lượng sản phẩm?");
+            if (!ok) return;
+
+            const res = await fetch(`http://localhost:5000/api/admin/order/item/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ quantity: newQuantity })
+            });
+            const data = await res.json();
+            toast.success(data.message);
+
+            // cập nhật UI và tránh lỗi update khi sử dụng quantity - 1 / quantity + 1
+            setOrderDetails(prev =>
+                prev.map(item =>
+                    item.id === id ? { ...item, quantity: newQuantity } : item
+                )
+            )
+        } catch (err) {
+            toast.error("Lỗi khi cập nhật sản phẩm trong đơn hàng")
+        }
+    }
+
+    const handleDelete = async (id) => {
+        try {
+            const ok = window.confirm("Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?")
+            if (!ok) return;
+
+            const res = await fetch(`http://localhost:5000/api/admin/order/item/delete/${id}`, {
+                method: "DELETE"
+            })
+            const data = await res.json();
+            toast.success(data.message);
+
+            setOrderDetails(prev => prev.filter(item => item.id !== id));
+        } catch (err) {
+            toast.error("Lỗi khi xóa sản phẩm trong đơn hàng")
+        }
+    }
 
     // 🟢 Gọi API lấy danh sách đơn hàng
     const fetchOrders = async () => {
@@ -107,7 +149,9 @@ export default function AdminOrders() {
                                                 ? "bg-yellow-100 text-yellow-700"
                                                 : o.status === "Đang giao"
                                                     ? "bg-blue-100 text-blue-700"
-                                                    : "bg-gray-100 text-gray-600"
+                                                    : o.status === "Đã hủy"
+                                                        ? "bg-gray-100 text-gray-600"
+                                                        : "bg-yellow-200 text-white-600"
                                             }`}
                                     >
                                         {o.status}
@@ -130,6 +174,7 @@ export default function AdminOrders() {
                                         onChange={(e) => updateStatus(o.id, e.target.value)}
                                         className="border rounded p-1"
                                     >
+                                        <option value="Chờ xác nhận">Chờ xác nhận</option>
                                         <option value="Đang xử lý">Đang xử lý</option>
                                         <option value="Đang giao">Đang giao</option>
                                         <option value="Hoàn thành">Hoàn thành</option>
@@ -169,6 +214,7 @@ export default function AdminOrders() {
 
                                             <div className="flex items-center justify-between">
                                                 <span className="text-blue-600 font-medium">Số lượng: {item.quantity}</span>
+                                                <span>{item.quantity > item.stock ? "⚠️" : ""}</span>
                                                 <span className="text-red-600 font-medium">Tồn kho: {item.stock}</span>
                                             </div>
 
@@ -178,14 +224,31 @@ export default function AdminOrders() {
                                             </div>
 
                                             <div className="text-lg font-bold text-amber-600">
-                                                {Number(item.price * item.quantity).toLocaleString("vi-VN")}₫
+                                                {Number(item.price * item.quantity).toLocaleString("vi-VN")}₫ - {item.price.toLocaleString("vi-VN")} x1
                                             </div>
 
-                                            <button
-                                                className="mt-2 bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 rounded transition"
-                                            >
-                                                Chỉnh sửa
-                                            </button>
+                                            {item.status === "Chờ xác nhận" && (
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <button
+                                                        onClick={() => handleUpdate(item.id, item.quantity - 1)}
+                                                        className={item.quantity == 1 ? "mt-2 bg-amber-500/50 text-white font-medium py-1 rounded" : "mt-2 bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 rounded transition"}
+                                                    >
+                                                        -
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleUpdate(item.id, item.quantity + 1)}
+                                                        className="mt-2 bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 rounded transition"
+                                                    >
+                                                        +
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(item.id)}
+                                                        className="mt-2 bg-red-600 hover:bg-red-700 text-white font-medium py-1 rounded transition"
+                                                    >
+                                                        Xóa
+                                                    </button>
+                                                </div>
+                                            )}
 
                                         </div>
                                     </div>

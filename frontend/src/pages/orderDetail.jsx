@@ -113,7 +113,7 @@ export default function OrderDetail() {
                     </ul>
 
                     {/* 🟥 Nút Hủy đơn */}
-                    {order.status !== "Đã hủy" && order.status !== "Hoàn thành" && order.status !== "Đang giao" && (
+                    {order.status !== "Đã hủy" && order.status !== "Hoàn thành" && order.status !== "Đang giao" && order.status !== "Đang xử lý" && (
                         <div className="text-center mt-6">
                             <button
                                 onClick={handleCancel}

@@ -427,7 +427,8 @@ app.get("/api/orders/:id", (req, res) => {
 app.put("/api/orders/:id/cancel", (req, res) => {
     const { id } = req.params;
     const sql = `
-    UPDATE orders SET status = 'Đã hủy' WHERE id = ? AND status != 'Đã giao' AND status != 'Đang giao'
+    UPDATE orders SET status = 'Đã hủy'
+    WHERE id = ? AND status != 'Đã giao' AND status != 'Đang giao' AND status != 'Đang xử lý'
     `;
     db.query(sql, [id], (err, result) => {
         if (err) return res.status(500).json({ message: "Lỗi khi hủy đơn hàng" });
@@ -507,14 +508,14 @@ app.get("/api/admin/orders", (req, res) => {
     });
 });
 
-// Lấy chi tiết 1 đơn hàng (admin)
+// API Lấy chi tiết 1 đơn hàng (admin)
 app.get("/api/admin/orders/:id", (req, res) => {
     const { id } = req.params;
 
     const sql = `
         SELECT 
             o.status,
-            oi.quantity, oi.price,
+            oi.quantity, oi.price, oi.id,
             p.name, p.image, p.gender, p.category, p.stock
         FROM orders o
         JOIN order_items oi ON o.id = oi.order_id
@@ -527,6 +528,35 @@ app.get("/api/admin/orders/:id", (req, res) => {
         res.json(result);
     });
 });
+
+// API Cập nhật số lượng chi tiết sản phẩm của đơn hàng (admin)
+app.put("/api/admin/order/item/:id", (req, res) => {
+    const { id } = req.params;
+    const { quantity } = req.body;
+
+    const sql = `
+        UPDATE order_items
+        SET quantity = ?
+        WHERE id = ?
+    `
+
+    db.query(sql, [quantity, id], (err, result) => {
+        if (err) return res.status(500).json({ message: "Lỗi server" });
+        res.json({ message: "Cập nhật thành công" });
+    });
+})
+
+// API Xóa sản phẩm khỏi chi tiết đơn hàng (admin)
+app.delete("/api/admin/order/item/delete/:id", (req, res) => {
+    const { id } = req.params;
+
+    const sql = "DELETE FROM order_items WHERE id = ?"
+
+    db.query(sql, id, (err, result) => {
+        if (err) return res.status(400).json({ message: "Lỗi server " });
+        res.json({ message: "Xóa sản phẩm khỏi đơn hàng thành công" });
+    });
+})
 
 //  API: Cập nhật trạng thái đơn hàng (admin)
 app.put("/api/admin/orders/:id", (req, res) => {
