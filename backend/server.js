@@ -17,7 +17,6 @@ const db = mysql.createConnection({ // tao ket noi toi database => OBJECT
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME
 });
-const PORT = process.env.PORT || 5000;
 
 // THUC HIEN KET NOI
 db.connect((err) => { //connect callback loi khi ket noi ko thanh cong => err, con thanh cong thi` thoi
@@ -493,7 +492,7 @@ app.get("/api/orders/:order_id/items", (req, res) => {
 // API: Lấy toàn bộ đơn hàng (admin)
 app.get("/api/admin/orders", (req, res) => {
     const sql = `
-    SELECT o.id, o.name, o.email, o.phone, o.payment_method, o.status, o.create_at, SUM(oi.quantity * oi.price) AS total
+    SELECT o.id, o.name, o.email, o.phone, o.payment_method, o.status, o.minus_stock, o.create_at, SUM(oi.quantity * oi.price) AS total
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
     GROUP BY order_id
@@ -529,6 +528,69 @@ app.get("/api/admin/orders/:id", (req, res) => {
     });
 });
 
+// API get stock
+app.get("/api/admin/order/get-stock/:id", (req, res) => {
+    const { id } = req.params;
+
+    const sql = `
+        SELECT
+            quantity, product_id
+        FROM order_items
+        WHERE order_id = ?
+    `;
+
+    db.query(sql, [id], (err, results) => {
+        if (err) return res.status(500).json({ message: "Lỗi server" });
+        res.json(results);
+    });
+})
+
+// API trừ stock (có kiểm tra minus_stock + stock đủ)
+app.put("/api/admin/order/minus-stock", (req, res) => {
+    const { quantity, product_id, order_id } = req.body; // Thêm order_id để kiểm tra
+
+    // 1. Kiểm tra đơn hàng đã trừ chưa
+    const checkOrderSql = "SELECT minus_stock FROM orders WHERE id = ?";
+    db.query(checkOrderSql, [order_id], (err, orderResult) => {
+        if (err) return res.status(500).json({ message: "Lỗi kiểm tra đơn hàng" });
+        if (orderResult[0]?.minus_stock === 1) {
+            return res.status(400).json({ message: "Đơn hàng đã được trừ stock rồi!" });
+        }
+
+        // 2. Kiểm tra stock hiện tại
+        const checkStockSql = "SELECT stock FROM products WHERE id = ?";
+        db.query(checkStockSql, [product_id], (err, stockResult) => {
+            if (err) return res.status(500).json({ message: "Lỗi kiểm tra tồn kho" });
+            if (!stockResult[0] || stockResult[0].stock < quantity) {
+                return res.status(400).json({
+                    message: `Không đủ hàng (còn ${stockResult[0]?.stock || 0})`
+                });
+            }
+
+            // 3. Trừ stock
+            const updateSql = "UPDATE products SET stock = stock - ? WHERE id = ?";
+            db.query(updateSql, [quantity, product_id], (err, result) => {
+                if (err) return res.status(500).json({ message: "Lỗi trừ stock" });
+
+                // 4. Cập nhật minus_stock (chỉ khi tất cả sản phẩm thành công)
+                // → Sẽ được gọi từ frontend sau vòng lặp
+                res.json({ message: "Trừ stock thành công", product_id, quantity });
+            });
+        });
+    });
+});
+
+// API cập nhật minus_stock
+app.put("/api/admin/order/update-minus-stock/:id", (req, res) => {
+    const { id } = req.params;
+    const sql = "UPDATE orders SET minus_stock = 1 WHERE id = ?";
+
+    db.query(sql, [id], (err, result) => {
+        if (err) return res.status(500).json({ message: "Lỗi update minus_stock" });
+        res.json({ message: "Đã update minus_stock" })
+    })
+})
+
 // API Cập nhật số lượng chi tiết sản phẩm của đơn hàng (admin)
 app.put("/api/admin/order/item/:id", (req, res) => {
     const { id } = req.params;
@@ -552,7 +614,7 @@ app.delete("/api/admin/order/item/delete/:id", (req, res) => {
 
     const sql = "DELETE FROM order_items WHERE id = ?"
 
-    db.query(sql, id, (err, result) => {
+    db.query(sql, [id], (err, result) => {
         if (err) return res.status(400).json({ message: "Lỗi server " });
         res.json({ message: "Xóa sản phẩm khỏi đơn hàng thành công" });
     });
@@ -609,7 +671,7 @@ app.delete("/api/admin/users/delete/:id", (req, res) => {
     })
 })
 
-app.listen(PORT, (err) => {
+app.listen(5000, (err) => {
     if (err) {
         console.log("Có lỗi xảy ra khi khởi động", err);
     } console.log("Server đang chạy ở http://localhost:5000");

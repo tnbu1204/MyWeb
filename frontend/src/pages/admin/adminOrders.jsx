@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -7,6 +8,7 @@ export default function AdminOrders() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [orderDetails, setOrderDetails] = useState([]);
     const [detailLoading, setDetailLoading] = useState(false);
+    const [stock, setStock] = useState([]);
 
     const viewOrder = async (orderId) => {
         setDetailLoading(true);
@@ -64,7 +66,7 @@ export default function AdminOrders() {
         }
     }
 
-    // 🟢 Gọi API lấy danh sách đơn hàng
+    // Gọi API lấy danh sách đơn hàng
     const fetchOrders = async () => {
         try {
             const res = await fetch("http://localhost:5000/api/admin/orders");
@@ -78,11 +80,77 @@ export default function AdminOrders() {
         }
     };
 
+    // Gọi API lấy stock theo order id
+    const getStock = async (id) => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/admin/order/get-stock/${id}`);
+            const data = await res.json();
+            return data;
+        } catch (err) {
+            console.error("Lỗi khi getstock", err);
+            toast.error("Lỗi khi get stock");
+        }
+    };
+
+    const handleMinus = async (id) => {
+        if (!confirm("Xác nhận trừ tồn kho cho đơn hàng này?")) return;
+
+        try {
+            const stockData = await getStock(id);
+
+            let hasError = false;
+
+            // Trừ từng sản phẩm
+            for (let s of stockData) {
+                try {
+                    const res = await fetch(`http://localhost:5000/api/admin/order/minus-stock`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            quantity: s.quantity,
+                            product_id: s.product_id,
+                            order_id: id  // Gửi kèm để kiểm tra
+                        })
+                    });
+
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        toast.error(data.message);
+                        hasError = true;
+                        break; // Dừng nếu 1 sản phẩm lỗi
+                    }
+                } catch (err) {
+                    console.error("Lỗi trừ stock sản phẩm", err);
+                    toast.error("Lỗi server");
+                    hasError = true;
+                    break;
+                }
+            }
+
+            // Chỉ cập nhật minus_stock nếu tất cả sản phẩm thành công
+            if (!hasError) {
+                const res = await fetch(`http://localhost:5000/api/admin/order/update-minus-stock/${id}`, {
+                    method: "PUT"
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    toast.success("Đã trừ tồn kho thành công!");
+                } else {
+                    toast.error(data.message);
+                }
+            }
+
+        } catch (err) {
+            toast.error("Lỗi khi lấy danh sách sản phẩm");
+        }
+    };
+
     useEffect(() => {
         fetchOrders();
     }, []);
 
-    // 🟡 Cập nhật trạng thái đơn hàng
+    // Cập nhật trạng thái đơn hàng
     const updateStatus = async (orderId, newStatus) => {
         if (!window.confirm("Bạn có chắc muốn đổi trạng thái đơn hàng này?")) return;
 
@@ -92,12 +160,12 @@ export default function AdminOrders() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
             });
+            const data = await res.json();
 
             if (res.ok) {
-                toast.success("✅ Đã cập nhật trạng thái!");
-                fetchOrders();
+                toast.success(data.message);
             } else {
-                toast.error("Lỗi khi cập nhật trạng thái");
+                toast.error(data.message);
             }
         } catch (err) {
             console.error(err);
@@ -142,44 +210,48 @@ export default function AdminOrders() {
                                 </td>
                                 <td className="border p-2">{o.payment_method}</td>
                                 <td className="border p-2">
-                                    <span
-                                        className={`px-2 py-1 rounded ${o.status === "Hoàn thành"
-                                            ? "bg-green-100 text-green-700"
-                                            : o.status === "Đang xử lý"
-                                                ? "bg-yellow-100 text-yellow-700"
-                                                : o.status === "Đang giao"
-                                                    ? "bg-blue-100 text-blue-700"
-                                                    : o.status === "Đã hủy"
-                                                        ? "bg-gray-100 text-gray-600"
-                                                        : "bg-yellow-200 text-white-600"
-                                            }`}
-                                    >
+                                    <div className={`px-2 py-1 mb-1 rounded ${o.status === "Hoàn thành"
+                                        ? "bg-green-100 text-green-700"
+                                        : o.status === "Đang xử lý"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : o.status === "Đang giao"
+                                                ? "bg-blue-100 text-blue-700"
+                                                : o.status === "Đã hủy"
+                                                    ? "bg-gray-100 text-gray-600"
+                                                    : "bg-yellow-200 text-white-600"
+                                        }`}>
                                         {o.status}
-                                    </span>
+                                    </div>
+                                    <div className={`px-2 py-1 rounded ${o.minus_stock === 0 ? "bg-yellow-400" : "bg-green-100"}`}>
+                                        {o.minus_stock === 0 ? "Chưa trừ stock" : "Đã trừ stock"}
+                                    </div>
                                 </td>
                                 <td className="border p-2">
                                     {new Date(o.create_at).toLocaleString("vi-VN")}
                                 </td>
 
-                                <td className="border p-2 flex flex-col gap-2 justify-center">
-                                    <button
-                                        onClick={() => viewOrder(o.id)}
-                                        className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                                    >
-                                        Xem chi tiết
-                                    </button>
-
-                                    <select
-                                        value={o.status}
-                                        onChange={(e) => updateStatus(o.id, e.target.value)}
-                                        className="border rounded p-1"
-                                    >
-                                        <option value="Chờ xác nhận">Chờ xác nhận</option>
-                                        <option value="Đang xử lý">Đang xử lý</option>
-                                        <option value="Đang giao">Đang giao</option>
-                                        <option value="Hoàn thành">Hoàn thành</option>
-                                        <option value="Đã hủy">Đã hủy</option>
-                                    </select>
+                                <td className="border p-2 ">
+                                    <div className="mb-1 ">
+                                        <button
+                                            onClick={() => viewOrder(o.id)}
+                                            className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                                        >
+                                            Xem chi tiết
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <select
+                                            value={o.status}
+                                            onChange={(e) => updateStatus(o.id, e.target.value)}
+                                            className="border rounded p-1"
+                                        >
+                                            <option value="Chờ xác nhận">Chờ xác nhận</option>
+                                            <option value="Đang xử lý">Đang xử lý</option>
+                                            <option value="Đang giao">Đang giao</option>
+                                            <option value="Hoàn thành">Hoàn thành</option>
+                                            <option value="Đã hủy">Đã hủy</option>
+                                        </select>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -256,12 +328,20 @@ export default function AdminOrders() {
                             </div>
                         )}
 
-                        <button
-                            className="mt-4 w-full bg-red-500 text-white py-2 rounded"
-                            onClick={() => setSelectedOrder(null)}
-                        >
-                            Đóng
-                        </button>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                className="mt-4 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded"
+                                onClick={() => handleMinus(selectedOrder)}
+                            >
+                                Trừ Stock
+                            </button>
+                            <button
+                                className="mt-4 w-full bg-red-500 hover:bg-red-700 text-white py-2 rounded"
+                                onClick={() => setSelectedOrder(null)}
+                            >
+                                Đóng
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
