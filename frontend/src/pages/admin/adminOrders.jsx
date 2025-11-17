@@ -8,7 +8,6 @@ export default function AdminOrders() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [orderDetails, setOrderDetails] = useState([]);
     const [detailLoading, setDetailLoading] = useState(false);
-    const [stock, setStock] = useState([]);
 
     const viewOrder = async (orderId) => {
         setDetailLoading(true);
@@ -92,59 +91,58 @@ export default function AdminOrders() {
         }
     };
 
-    const handleMinus = async (id) => {
+    const handleMinus = async (orderId) => {
         if (!confirm("Xác nhận trừ tồn kho cho đơn hàng này?")) return;
 
         try {
-            const stockData = await getStock(id);
+            // 1. Lấy danh sách sản phẩm trong đơn
+            const stockData = await getStock(orderId);
 
-            let hasError = false;
+            // 2. Kiểm tra đủ stock chưa
+            const checkRes = await fetch("http://localhost:5000/api/admin/order/check-stock", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items: stockData })
+            });
+            const checkData = await checkRes.json();
 
-            // Trừ từng sản phẩm
-            for (let s of stockData) {
-                try {
-                    const res = await fetch(`http://localhost:5000/api/admin/order/minus-stock`, {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            quantity: s.quantity,
-                            product_id: s.product_id,
-                            order_id: id  // Gửi kèm để kiểm tra
-                        })
-                    });
-
-                    const data = await res.json();
-
-                    if (!res.ok) {
-                        toast.error(data.message);
-                        hasError = true;
-                        break; // Dừng nếu 1 sản phẩm lỗi
-                    }
-                } catch (err) {
-                    console.error("Lỗi trừ stock sản phẩm", err);
-                    toast.error("Lỗi server");
-                    hasError = true;
-                    break;
-                }
+            if (!checkRes.ok) {
+                toast.error(checkData.errors[0].message);
+                return;
             }
 
-            // Chỉ cập nhật minus_stock nếu tất cả sản phẩm thành công
-            if (!hasError) {
-                const res = await fetch(`http://localhost:5000/api/admin/order/update-minus-stock/${id}`, {
-                    method: "PUT"
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    toast.success("Đã trừ tồn kho thành công!");
-                } else {
-                    toast.error(data.message);
-                }
+            // 3. Trừ stock
+            const res = await fetch("http://localhost:5000/api/admin/order/minus-all", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items: stockData, order_id: orderId })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data.message);
+                return;
             }
+
+            toast.success(data.message);
+
+            // Cập nhật trạng thái minus_stock của order
+            setOrders(prev =>
+                prev.map(order =>
+                    order.id === orderId ? { ...order, minus_stock: 1 } : order
+                )
+            );
+
+            const detailRes = await fetch(`http://localhost:5000/api/admin/orders/${orderId}`);
+            const updatedDetails = await detailRes.json();
+            setOrderDetails(updatedDetails);
 
         } catch (err) {
-            toast.error("Lỗi khi lấy danh sách sản phẩm");
+            console.error(err);
+            toast.error("Lỗi khi trừ stock");
         }
     };
+
 
     useEffect(() => {
         fetchOrders();

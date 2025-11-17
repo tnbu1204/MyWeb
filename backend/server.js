@@ -545,51 +545,116 @@ app.get("/api/admin/order/get-stock/:id", (req, res) => {
     });
 })
 
-// API trừ stock (có kiểm tra minus_stock + stock đủ)
-app.put("/api/admin/order/minus-stock", (req, res) => {
-    const { quantity, product_id, order_id } = req.body; // Thêm order_id để kiểm tra
+// API chỉ kiểm tra stock, không trừ
+app.post("/api/admin/order/check-stock", (req, res) => {
+    const { items } = req.body; // [{product_id, quantity}]
 
-    // 1. Kiểm tra đơn hàng đã trừ chưa
-    const checkOrderSql = "SELECT minus_stock FROM orders WHERE id = ?";
-    db.query(checkOrderSql, [order_id], (err, orderResult) => {
-        if (err) return res.status(500).json({ message: "Lỗi kiểm tra đơn hàng" });
-        if (orderResult[0]?.minus_stock === 1) {
-            return res.status(400).json({ message: "Đơn hàng đã được trừ stock rồi!" });
-        }
+    const errorItems = [];
 
-        // 2. Kiểm tra stock hiện tại
-        const checkStockSql = "SELECT stock FROM products WHERE id = ?";
-        db.query(checkStockSql, [product_id], (err, stockResult) => {
-            if (err) return res.status(500).json({ message: "Lỗi kiểm tra tồn kho" });
-            if (!stockResult[0] || stockResult[0].stock < quantity) {
-                return res.status(400).json({
-                    message: `Không đủ hàng (còn ${stockResult[0]?.stock || 0})`
-                });
+    let checked = 0;
+
+    items.forEach(item => {
+        const sql = "SELECT id, name, stock FROM products WHERE id = ?";
+        db.query(sql, [item.product_id], (err, result) => {
+            checked++;
+
+            if (err) {
+                errorItems.push({ message: "Lỗi kiểm tra stock", item });
+            } else {
+                const p = result[0];
+                if (!p || p.stock < item.quantity) {
+                    errorItems.push({
+                        message: `Không đủ hàng: ${p?.name || "Không có"} 
+                                id ${p.id} | còn ${p?.stock || 0}, cần ${item.quantity}`,
+                        item
+                    });
+                }
             }
 
-            // 3. Trừ stock
-            const updateSql = "UPDATE products SET stock = stock - ? WHERE id = ?";
-            db.query(updateSql, [quantity, product_id], (err, result) => {
-                if (err) return res.status(500).json({ message: "Lỗi trừ stock" });
-
-                // 4. Cập nhật minus_stock (chỉ khi tất cả sản phẩm thành công)
-                // → Sẽ được gọi từ frontend sau vòng lặp
-                res.json({ message: "Trừ stock thành công", product_id, quantity });
-            });
+            if (checked === items.length) {
+                if (errorItems.length > 0) {
+                    return res.status(400).json({ errors: errorItems });
+                }
+                res.json({ message: "OK" });
+            }
         });
     });
 });
 
-// API cập nhật minus_stock
-app.put("/api/admin/order/update-minus-stock/:id", (req, res) => {
-    const { id } = req.params;
-    const sql = "UPDATE orders SET minus_stock = 1 WHERE id = ?";
+// API trừ stock tất cả 1 lần (Dùng transaction, mysql2 callback)
+// Giả sử db = mysql2.createConnection(...)
+app.post("/api/admin/order/minus-all", (req, res) => {
+    const { items, order_id } = req.body;
 
-    db.query(sql, [id], (err, result) => {
-        if (err) return res.status(500).json({ message: "Lỗi update minus_stock" });
-        res.json({ message: "Đã update minus_stock" })
-    })
-})
+    if (!items || items.length === 0) {
+        return res.status(400).json({ message: "Đơn hàng không có sản phẩm" });
+    }
+
+    // 1. Kiểm tra đơn đã trừ chưa
+    const checkOrderSql = "SELECT minus_stock FROM orders WHERE id = ?";
+    db.query(checkOrderSql, [order_id], (err, orderResult) => {
+        if (err) return res.status(500).json({ message: "Lỗi kiểm tra đơn hàng" });
+
+        if (orderResult[0].minus_stock === 1) {
+            return res.status(400).json({ message: "Đơn hàng đã trừ stock rồi!" });
+        }
+
+        // 2. Bắt đầu transaction
+        db.beginTransaction(err => {
+            if (err) return res.status(500).json({ message: "Lỗi bắt đầu transaction" });
+
+            let index = 0;
+
+            const checkNextProduct = () => {
+                if (index >= items.length) {
+                    // Trừ stock tất cả sản phẩm
+                    let i = 0;
+                    const minusNext = () => {
+                        if (i >= items.length) {
+                            // Update minus_stock
+                            db.query("UPDATE orders SET minus_stock = 1 WHERE id = ?", [order_id], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ message: "Lỗi update minus_stock" }));
+
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ message: "Lỗi commit transaction" }));
+                                    return res.json({ message: "Trừ stock thành công" });
+                                });
+                            });
+                            return;
+                        }
+
+                        const item = items[i];
+                        db.query("UPDATE products SET stock = stock - ? WHERE id = ?", [item.quantity, item.product_id], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ message: `Lỗi trừ stock sản phẩm ${item.product_id}` }));
+                            i++;
+                            minusNext();
+                        });
+                    };
+                    minusNext();
+                    return;
+                }
+
+                const item = items[index];
+                // SELECT FOR UPDATE (khóa dòng sản phẩm)
+                db.query("SELECT stock FROM products WHERE id = ? FOR UPDATE", [item.product_id], (err, productResult) => {
+                    if (err) return db.rollback(() => res.status(500).json({ message: "Lỗi kiểm tra stock" }));
+
+                    if (!productResult[0] || productResult[0].stock < item.quantity) {
+                        return db.rollback(() => res.status(400).json({
+                            message: `Không đủ stock cho sản phẩm ${item.product_id} (còn ${productResult[0]?.stock || 0}, cần ${item.quantity})`
+                        }));
+                    }
+
+                    index++;
+                    checkNextProduct();
+                });
+            };
+
+            checkNextProduct();
+        });
+    });
+});
+
 
 // API Cập nhật số lượng chi tiết sản phẩm của đơn hàng (admin)
 app.put("/api/admin/order/item/:id", (req, res) => {
