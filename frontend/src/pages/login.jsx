@@ -21,8 +21,6 @@ function Login() {
 
         if (!form.username || !form.password) {
             setError("Vui lòng nhập đầy đủ thông tin!");
-        } else {
-            setError("");
         }
 
         try {

@@ -67,7 +67,7 @@ app.post("/login", (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-        return res.status(400).json({ message: "Thiếu thông tin" });
+        return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin!" });
     }
 
     const sql = "SELECT * FROM users WHERE username = ? AND password = ?";
