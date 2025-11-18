@@ -47,9 +47,10 @@ function Products() {
                         value={filters.gender}
                         onChange={(e) => setFilters({ ...filters, gender: e.target.value })}
                     >
-                        <option value="all">Tất cả giới tính</option>
+                        <option value="all">Tất cả</option>
                         <option value="Nam">Nam</option>
                         <option value="Nữ">Nữ</option>
+                        <option value="Unisex">Unisex</option>
                     </select>
                 </div>
 

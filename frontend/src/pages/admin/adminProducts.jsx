@@ -11,6 +11,27 @@ export default function AdminProducts() {
 
     useEffect(() => { fetchProducts(); }, []);
 
+    const [filters, setFilters] = useState({
+        category: "all", // áo | quần | váy | all
+        gender: "all"    // nam | nữ | all
+    });
+    const [sort, setSort] = useState("none");
+
+    const filteredProducts = products.filter((p) => {
+        const matchCategory = filters.category === "all" || p.category === filters.category;
+        const matchGender = filters.gender === "all" || p.gender === filters.gender;
+
+        return matchCategory && matchGender;
+    });
+
+    // Sắp xếp theo stock
+    if (sort === "stock-asc") {
+        filteredProducts.sort((a, b) => a.stock - b.stock);
+    }
+    if (sort === "stock-desc") {
+        filteredProducts.sort((a, b) => b.stock - a.stock);
+    }
+
     // THEM
     const [form, setForm] = useState({
         name: "",
@@ -92,7 +113,7 @@ export default function AdminProducts() {
 
         const data = await res.json();
         if (res.ok) {
-            toast.success("✅ Cập nhật thành công!");
+            toast.success("Cập nhật thành công!");
             setEditingProduct(null);
             fetchProducts();
         } else {
@@ -112,7 +133,7 @@ export default function AdminProducts() {
 
         const data = await res.json();
         if (res.ok) {
-            toast.success("✅ Đã thêm sản phẩm!");
+            toast.success("Đã thêm sản phẩm!");
             setForm({ name: "", price: "", category: "", gender: "", stock: "", description: "", image: null });
             setPreview(null);
             fetchProducts();
@@ -234,20 +255,92 @@ export default function AdminProducts() {
                 </div>
             </form>
 
+            <div className="flex gap-4 mb-6">
+                {/* Lọc loại sản phẩm */}
+                <select
+                    className="border px-3 py-2 rounded"
+                    value={filters.category}
+                    onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                >
+                    <option value="all">Tất cả loại</option>
+                    <option value="Áo">Áo</option>
+                    <option value="Quần">Quần</option>
+                    <option value="Váy">Váy</option>
+                </select>
+
+                {/* Lọc theo giới tính */}
+                <select
+                    className="border px-3 py-2 rounded"
+                    value={filters.gender}
+                    onChange={(e) => setFilters({ ...filters, gender: e.target.value })}
+                >
+                    <option value="all">Tất cả</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Unisex">Unisex</option>
+                </select>
+
+                {/* Sort by Stock */}
+                <select
+                    className="border px-3 py-2 rounded"
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                >
+                    <option value="none">Sắp xếp</option>
+                    <option value="stock-asc">Tồn kho: Thấp → Cao</option>
+                    <option value="stock-desc">Tồn kho: Cao → Thấp</option>
+                </select>
+            </div>
 
             {/* DANH SÁCH */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {products.map((p) => (
-                    <div key={p.id} className="border rounded p-3 bg-white shadow-sm">
+                {filteredProducts.map((p) => (
+                    <div key={p.id} className="border rounded p-3 bg-white shadow-sm relative">
+                        {/* Badge giới tính với màu riêng */}
+                        <span
+                            className={`absolute top-3 left-3 text-xs font-semibold px-2 py-1 rounded-full ${p.gender === "Nam"
+                                ? "bg-blue-100 text-blue-700"
+                                : p.gender === "Nữ"
+                                    ? "bg-pink-100 text-pink-700"
+                                    : "bg-purple-100 text-purple-700"
+                                }`}
+                        >
+                            {p.gender === "Nam"
+                                ? "Nam"
+                                : p.gender === "Nữ"
+                                    ? "Nữ"
+                                    : "Unisex"}
+                        </span>
+
+                        {/* Badge loại quần áo (áo/quần/váy) */}
+                        <span
+                            className={`absolute top-10 left-3 text-xs font-semibold px-2 py-1 rounded-full ${p.category === "Áo"
+                                ? "bg-green-100 text-green-700"
+                                : p.category === "Quần"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-orange-100 text-orange-700"
+                                }`}
+                        >
+                            {p.category === "Áo"
+                                ? "Áo"
+                                : p.category === "Quần"
+                                    ? "Quần"
+                                    : "Váy"}
+                        </span>
+
                         <img src={`http://localhost:5000/uploads/${p.image}`} alt={p.name} className="w-full h-40 object-contain mb-2" />
+
                         <span className="">
                             <h4 className="font-semibold">{p.name}</h4>
                             <h2 className="font-semibold text-red-600">Tồn kho: {p.stock}</h2>
                         </span>
+
                         <p className="text-blue-600 font-medium">
                             {Number(p.price).toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
                         </p>
+
                         <p className="text-sm text-gray-600 mb-2">{p.description}</p>
+
                         <div className="flex justify-around">
                             <button onClick={() => handleEditClick(p)} className="bg-blue-500 text-white w-40/100 rounded py-1 hover:bg-blue-600">
                                 Chỉnh sửa

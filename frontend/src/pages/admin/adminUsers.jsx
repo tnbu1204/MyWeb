@@ -42,6 +42,8 @@ export default function AdminUsers() {
 
     return (
         <div className="overflow-x-auto">
+            <h2 className="text-2xl font-bold mb-4">👥 Quản lý người dùng</h2>
+
             <table className="w-full border border-gray-300 rounded-lg shadow-sm">
                 <thead className="bg-blue-50">
                     <tr>
@@ -66,7 +68,7 @@ export default function AdminUsers() {
                             <td className="border border-black p-2 text-red-600 font-bold">{Number(u.tongchitieu).toLocaleString("vi-VN")}₫</td>
                             <td className="border p-2">{new Date(u.create_at).toLocaleString("vi-VN")}</td>
                             <td className="border p-2">
-                                <button onClick={() => handleDelete(u.id)} className="bg-red-600 p-2 rounded-md text-white hover:bg-red-800">Xóa tài khoản</button>
+                                {u.id === 1 ? "" : <button onClick={() => handleDelete(u.id)} className="bg-red-600 p-2 rounded-md text-white hover:bg-red-800">Xóa tài khoản</button>}
                             </td>
                         </tr>
                     ))}

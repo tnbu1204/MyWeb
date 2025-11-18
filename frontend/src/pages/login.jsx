@@ -1,6 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { replace, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Login() {
     const [form, setFrom] = useState({
@@ -72,33 +73,36 @@ function Login() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-            <div className="bg-white p-8 rounded-4xl shadow-lg w-96">
-                <h1 className="text-2xl font-bold mb-6 text-center text-blue-600">Đăng nhập</h1>
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <input
-                        type="text"
-                        name="username"
-                        placeholder="Tên đăng nhập"
-                        value={form.username}
-                        onChange={handleChange}
-                        className="border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Mật khẩu"
-                        value={form.password}
-                        onChange={handleChange}
-                        className="border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
-                    <button
-                        type="submit"
-                        className="bg-blue-600 text-white py-2 rounded-2xl hover:bg-blue-700 transition"
-                    >
-                        Đăng Nhập
-                    </button>
-                </form>
+            <div className="relative">
+                <div className="bg-white p-8 rounded-4xl shadow-lg w-96">
+                    <h1 className="text-2xl font-bold mb-6 text-center text-blue-600">Đăng nhập</h1>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                        <input
+                            type="text"
+                            name="username"
+                            placeholder="Tên đăng nhập"
+                            value={form.username}
+                            onChange={handleChange}
+                            className="border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="Mật khẩu"
+                            value={form.password}
+                            onChange={handleChange}
+                            className="border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                        {error && <p className="text-red-500 text-sm">{error}</p>}
+                        <button
+                            type="submit"
+                            className="bg-blue-600 text-white py-2 rounded-2xl hover:bg-blue-700 transition"
+                        >
+                            Đăng Nhập
+                        </button>
+                    </form>
+                </div>
+                <Link to={"/register"} className="text-blue-500 font-bold absolute right-12 mt-2 hover:underline">Đăng ký</Link>
             </div>
         </div>
     )

@@ -350,7 +350,7 @@ app.post("/api/orders", (req, res) => {
     // Thêm đơn hàng vào bảng orders
     const orderSql = `
     INSERT INTO orders (user_id, name, phone, email, address, payment_method)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?)
   `;
 
     db.query(

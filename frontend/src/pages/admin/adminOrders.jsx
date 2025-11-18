@@ -174,11 +174,16 @@ export default function AdminOrders() {
     if (loading) return <p className="text-center mt-10">⏳ Đang tải đơn hàng...</p>;
 
     if (!orders.length)
-        return <p className="text-center mt-10 text-gray-600">Không có đơn hàng nào.</p>;
+        return (
+            <div>
+                <h2 className="text-2xl font-bold mb-6 text-blue-600">📦 Quản lý đơn hàng</h2>
+                <p className="text-center mt-10 text-gray-600">Không có đơn hàng nào.</p>
+            </div>
+        );
 
     return (
         <div>
-            <h2 className="text-2xl font-bold mb-6 text-blue-600 text-center">📦 Quản lý đơn hàng</h2>
+            <h2 className="text-2xl font-bold mb-6 text-blue-600">📦 Quản lý đơn hàng</h2>
 
             <div className="overflow-x-auto">
                 <table className="w-full border border-gray-300 rounded-lg shadow-sm">

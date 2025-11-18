@@ -17,16 +17,6 @@
 SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
 SET @@SESSION.SQL_LOG_BIN= 0;
 
---
--- GTID state at the beginning of the backup 
---
-
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ 'e66da328-b18a-11f0-852a-74d4dd3f57a0:1-695';
-
---
--- Table structure for table `cart`
---
-
 DROP TABLE IF EXISTS `cart`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -41,7 +31,7 @@ CREATE TABLE `cart` (
   KEY `product_id_idx` (`product_id`),
   CONSTRAINT `product_id` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=188 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -71,7 +61,7 @@ CREATE TABLE `order_items` (
   KEY `order_product_id_idx` (`product_id`),
   CONSTRAINT `order_id` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
   CONSTRAINT `order_product_id` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=115 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=120 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -93,18 +83,18 @@ DROP TABLE IF EXISTS `orders`;
 CREATE TABLE `orders` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
-  `name` varchar(100) DEFAULT NULL,
-  `phone` varchar(20) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL,
-  `address` text,
-  `payment_method` varchar(50) DEFAULT NULL,
-  `status` enum('Chờ xác nhận','Đang xử lý','Đang giao','Hoàn thành','Đã hủy') DEFAULT 'Chờ xác nhận',
+  `name` varchar(100) CHARACTER SET utf8mb3 DEFAULT NULL,
+  `phone` varchar(20) CHARACTER SET utf8mb3 DEFAULT NULL,
+  `email` varchar(100) CHARACTER SET utf8mb3 DEFAULT NULL,
+  `address` text CHARACTER SET utf8mb3,
+  `payment_method` varchar(50) CHARACTER SET utf8mb3 DEFAULT NULL,
+  `status` enum('Chờ xác nhận','Đang xử lý','Đang giao','Hoàn thành','Đã hủy') CHARACTER SET utf8mb3 DEFAULT 'Chờ xác nhận',
   `create_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `minus_stock` int DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `order_user_id` (`user_id`),
   CONSTRAINT `order_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -125,17 +115,17 @@ DROP TABLE IF EXISTS `products`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `products` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
+  `name` varchar(100) CHARACTER SET utf8mb3 NOT NULL,
   `price` int NOT NULL,
-  `gender` enum('Nam','Nữ','Unisex') DEFAULT 'Unisex',
-  `category` enum('Áo','Quần','Váy') DEFAULT 'Áo',
-  `description` longtext,
+  `gender` enum('Nam','Nữ','Unisex') CHARACTER SET utf8mb3 DEFAULT 'Unisex',
+  `category` enum('Áo','Quần','Váy') CHARACTER SET utf8mb3 DEFAULT 'Áo',
+  `description` longtext CHARACTER SET utf8mb3,
   `stock` int DEFAULT '0',
-  `image` varchar(255) DEFAULT NULL,
+  `image` varchar(255) CHARACTER SET utf8mb3 DEFAULT NULL,
   `create_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `update_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -144,7 +134,7 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
-INSERT INTO `products` VALUES (33,'Áo thun nam trắng',300000,'Nam','Áo','',0,'1762362553828-IMG_1018.jpg','2025-10-27 20:06:14','2025-11-17 18:51:00'),(37,'Quần nữ nỉ ngắn ',175000,'Nữ','Quần','',100,'1761595693680-font.jpg','2025-10-27 20:08:13','2025-11-17 18:47:45'),(39,'Quần nỉ dài',240000,'Unisex','Quần','',100,'1761595740193-font.jpg','2025-10-27 20:09:00','2025-11-17 18:47:47'),(40,'Quần jean form rộng',350000,'Unisex','Quần','',85,'1761595779785-font.jpg','2025-10-27 20:09:39','2025-11-15 15:14:39'),(41,'Sơ mi sọc',280000,'Nam','Áo','',89,'1761595805121-font.jpg','2025-10-27 20:10:05','2025-11-15 15:14:55'),(42,'Sơ mi caro màu hồng',280000,'Nam','Áo','',96,'1761595829921-font.jpg','2025-10-27 20:10:29','2025-11-15 15:15:02'),(43,'Váy ngắn caro',250000,'Nữ','Váy','',96,'1761595890189-font.jpg','2025-10-27 20:11:30','2025-11-15 15:15:08'),(44,'Quần đùi nữ',150000,'Nữ','Quần','',96,'1761744837375-IMG_1994.jpg','2025-10-29 13:33:57','2025-11-15 15:15:14');
+INSERT INTO `products` VALUES (48,'Áo thun trắng Ra Bịch',360000,'Nam','Áo','',150,'1763492641176-IMG_1018.jpg','2025-11-18 15:47:57','2025-11-18 19:04:01'),(49,'Áo thun Cara Club',250000,'Unisex','Áo','',110,'1763480925664-IMG_1007.jpg','2025-11-18 15:48:45','2025-11-18 18:55:50'),(50,'Áo polo Shizuka',200000,'Nữ','Áo','',120,'1763480980819-IMG_1889.jpg','2025-11-18 15:49:40','2025-11-18 18:55:54'),(51,'Áo thun sọc hồng',180000,'Nam','Áo','',130,'1763481018667-IMG_1944.jpg','2025-11-18 15:50:18','2025-11-18 18:55:58'),(52,'Áo thun sọc xanh',180000,'Nam','Áo','',140,'1763481038767-IMG_1971.jpg','2025-11-18 15:50:38','2025-11-18 18:56:01'),(53,'Chân váy Caro',150000,'Nữ','Váy','',160,'1763481097851-IMG_1046.jpg','2025-11-18 15:51:37','2025-11-18 18:56:09'),(54,'Áo BabyDoll',200000,'Nữ','Áo','',170,'1763481215617-IMG_0911.jpg','2025-11-18 15:53:35','2025-11-18 18:56:12'),(55,'Quần ống rộng kẻ sọc',280000,'Nữ','Quần','',180,'1763481320532-IMG_1851.jpg','2025-11-18 15:55:20','2025-11-18 18:56:16'),(56,'Áo thun con nai vàng ngơ ngác',240000,'Unisex','Áo','',190,'1763481474779-IMG_1983.jpg','2025-11-18 15:57:54','2025-11-18 18:56:19'),(57,'Quần đùi kẻ sọc',250000,'Nữ','Quần','',200,'1763481529599-IMG_1994.jpg','2025-11-18 15:58:49','2025-11-18 18:56:22'),(58,'Váy trắng Midi',260000,'Nữ','Váy','',210,'1763481575628-IMG_2069.jpg','2025-11-18 15:59:35','2025-11-18 18:56:25'),(59,'Váy yếm trắng',150000,'Nữ','Váy','',220,'1763481653165-IMG_4693a.jpg','2025-11-18 16:00:53','2025-11-18 18:56:29'),(60,'Áo BabyDoll đốm đốm',123000,'Nữ','Áo','',230,'1763481712757-IMG_5181.jpg','2025-11-18 16:01:52','2025-11-18 18:56:32'),(61,'Váy ngắn vẫn trắng',140000,'Nữ','Váy','',240,'1763481861625-IMG_5161.jpg','2025-11-18 16:04:21','2025-11-18 18:56:35'),(62,'Quần thun ống rộng',300000,'Unisex','Quần','',250,'1763482030977-IMG_0316.jpg','2025-11-18 16:07:10','2025-11-18 18:56:38');
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -157,14 +147,14 @@ DROP TABLE IF EXISTS `users`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `username` varchar(20) NOT NULL,
-  `password` varchar(255) NOT NULL,
+  `username` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `create_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `email` varchar(100) DEFAULT NULL,
-  `phoneNumber` varchar(15) DEFAULT NULL,
+  `email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phoneNumber` varchar(15) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `userName_UNIQUE` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -187,4 +177,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-18 19:30:42
+-- Dump completed on 2025-11-19  2:04:48
