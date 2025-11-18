@@ -5,7 +5,7 @@
 ### 1. Cài đặt Node.js: https://nodejs.org/en (Bỏ qua nếu đã cài).
 ---
 ### 2. Tải dự án về:
-   - **Cách 1:** Clone về bằng git: `git clone https://github.com/tnbu1204/MyWeb.git`.
+   - **Cách 1:** Clone về bằng git: `git clone https://github.com/tnbu1204/MyWeb.git`
    - **Cách 2:** Tải file Zip: https://github.com/tnbu1204/MyWeb.
    - 📁 Cấu trúc thư mục:
      ```plaintext
@@ -29,8 +29,8 @@
 ### 4. Cài đặt các modules:
    - **Bước 1:** Kiểm tra policy (Cần để cho phép tải module qua npm)
      - Mở **PowerShell** với ***Run as Administrator***.
-     - Nhập lệnh `Get-ExecutionPolicy`.
-     - Nếu kết quả là `Restricted` thì nhập lệnh `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`.
+     - Nhập lệnh `Get-ExecutionPolicy`
+     - Nếu kết quả là `Restricted` thì nhập lệnh `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
      - <img width="962" height="148" alt="image" src="https://github.com/user-attachments/assets/e791e4fd-83f5-4b68-a65e-231def3c6d5d" />
      - Nhập `Y` để đồng ý.
      - Nhập lệnh `Get-ExecutionPolicy` để kiểm tra lại nếu là `RemoteSigned` thì thành công.
