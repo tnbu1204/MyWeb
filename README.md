@@ -12,7 +12,7 @@
        yourFolder/
        ├─ backend/
        ├─ frontend/
-       └─ myWeb.sql
+       └─ database.sql
      ```
 ---
 ### 3. Cài đặt sql:
@@ -43,7 +43,7 @@
        yourFolder/
        ├─ backend/
        ├─ frontend/
-       └─ myWeb.sql
+       └─ database.sql
        ```
      - Mở terminal (Ctrl + `)
      - Nhập lệnh `cd backend` đề điều hướng terminal đến folder `backend`
@@ -72,4 +72,8 @@
      - Sau đó nhập lệnh `npm run dev` để chạy fronend
      - Kết quả khi thành công:
        <br><img width="448" height="109" alt="image" src="https://github.com/user-attachments/assets/97049514-8285-4352-b479-e1b413a7c5ac" />
+---
+### 6. Tài khoản admin:
+  **Tên đăng nhập:** `admin`
+  **Mật khẩu:** `123456`
      

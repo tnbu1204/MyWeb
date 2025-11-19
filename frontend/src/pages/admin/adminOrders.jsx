@@ -165,6 +165,7 @@ export default function AdminOrders() {
             } else {
                 toast.error(data.message);
             }
+            fetchOrders()
         } catch (err) {
             console.error(err);
             toast.error("Lỗi kết nối server");

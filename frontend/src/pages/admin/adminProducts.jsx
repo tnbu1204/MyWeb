@@ -101,6 +101,7 @@ export default function AdminProducts() {
 
     const handleUpdate = async (e) => {
         e.preventDefault();
+        if (!window.confirm("Cập nhật sản phẩm này?")) return;
         const formData = new FormData(); // dùng khi có file hoặc nhiều trường linh hoạt
         Object.keys(editForm).forEach((key) => { // duyet qua tung key cua editForm
             formData.append(key, editForm[key]) // them key, value vao formData
