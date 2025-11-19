@@ -16,7 +16,7 @@
      ```
 ---
 ### 3. Cài đặt sql:
-   - Tạo Database và import file `myWeb.sql` (Charset: `utf8mb4_unicode_ci`)
+   - Tạo Database và import file `myWeb.sql` (Charset: `utf8`)
    - Sau khi import sẽ có 5 tables:
      ```
      - cart
